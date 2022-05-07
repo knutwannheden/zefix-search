@@ -82,7 +82,7 @@
             body.innerHTML = ''
 
             for await (let line of
-                makeTextFileLineIterator('/search?q=' + encodeURIComponent(document.getElementById('search').value)))
+                makeTextFileLineIterator('search?q=' + encodeURIComponent(document.getElementById('search').value)))
             {
                 try {
                     let myJson = JSON.parse(line)
