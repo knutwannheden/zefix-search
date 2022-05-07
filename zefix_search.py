@@ -19,8 +19,8 @@ def index():
 def search():
     query = '\\b' + '[^;]{0,20}'.join(regex.split('[\\s,.;]+', request.args.get('q'))) + '\\b'
     process = subprocess.Popen(
-        ['rg', '--search-zip', '--text', '--no-filename', '--no-line-number', query,
-         f'{config["ZEFIX_DIR"]}/../zefix.tar.zst'], stdout=subprocess.PIPE)
+        ['rg', '--search-zip', '--text', '--no-filename', '--no-line-number', '--ignore-case',
+            query, f'{config["ZEFIX_DIR"]}/../zefix.tar.zst'], stdout=subprocess.PIPE)
 
     def generate():
         while process.poll() is None:
