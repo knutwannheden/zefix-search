@@ -29,6 +29,7 @@ def search():
             if process.poll() is not None:
                 break
             if line:
+                print(line.decode())
                 yield line
         process.poll()
 

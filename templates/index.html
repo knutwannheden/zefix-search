@@ -24,17 +24,17 @@
         });
 
         function scrub_message(text) {
-            text = text.replace("&amp;amp;quot", "\"")
-            text = text.replace("&amp;amp;", "&")
-            text = text.replace("&amp;lt;", "<")
-            text = text.replace("&amp;gt;", ">")
-            text = text.replace("&amp;apos;", "'")
-            text = text.replace("&amp;quot;", "\"")
-            text = text.replace("&amp;", "&")
-            text = text.replace("&lt;", "<")
-            text = text.replace("&gt;", ">")
-            text = text.replace("&apos;", "'")
-            text = text.replace("&quot;", "\"")
+            text = text.replace(/&amp;amp;quot/g, "\"")
+            text = text.replace(/&amp;amp;/g, "&")
+            text = text.replace(/&amp;lt;/, "<")
+            text = text.replace(/&amp;gt;/g, ">")
+            text = text.replace(/amp;apos;/g, "'")
+            text = text.replace(/&amp;quot;/g, "\"")
+            text = text.replace(/&amp;/g, "&")
+            text = text.replace(/&lt;/g, "<")
+            text = text.replace(/&gt;/g, ">")
+            text = text.replace(/&apos;/g, "'")
+            text = text.replace(/&quot;/g, "\"")
             text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
             return text
         }
