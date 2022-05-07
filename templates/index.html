@@ -64,7 +64,6 @@
                         done: readerDone
                     } = await reader.read());
                     chunk = remainder + (chunk ? utf8Decoder.decode(chunk, { stream: true }) : "");
-                    chunk = remainder + chunk;
                     startIndex = re.lastIndex = 0;
                     continue;
                 }
