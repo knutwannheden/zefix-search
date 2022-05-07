@@ -89,11 +89,15 @@
 
                     let tr = body.insertRow(-1);
                     let tabCell = tr.insertCell(-1);
-                    tabCell.textContent = myJson['sogcPublication']['sogcId'];
+                    tabCell.innerHTML =
+                        `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/' + myJson.companyShort.ehraid + '#shabPub-'
+                                    + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
                     tabCell = tr.insertCell(-1);
                     tabCell.textContent = myJson.sogcPublication.sogcDate;
                     tabCell = tr.insertCell(-1);
-                    tabCell.textContent = myJson.companyShort.name;
+                    tabCell.innerHTML =
+                        `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                    + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a>`;
                     tabCell = tr.insertCell(-1);
                     tabCell.textContent = scrub_message(myJson.sogcPublication.message);
                 } catch (e) {
