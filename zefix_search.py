@@ -1,9 +1,9 @@
 import os
 import subprocess
-import regex
 
+import regex
 from dotenv import dotenv_values
-from flask import Flask, render_template, request, flash, Response
+from flask import Flask, render_template, request
 
 config = {**dotenv_values(".env"), **os.environ}
 
@@ -23,18 +23,11 @@ def search():
          f'{config["ZEFIX_DIR"]}/../zefix.tar.zst'], stdout=subprocess.PIPE)
 
     def generate():
-        # Poll process.stdout to show stdout live
-        while True:
-            line = process.stdout.readline()
-            if process.poll() is not None:
-                break
-            if line:
-                print(line.decode())
+        while process.poll() is None:
+            for line in iter(process.stdout.readline, b''):
                 yield line
-        process.poll()
 
     return app.response_class(generate(), mimetype='plain/text')
-    # return Response(f'[{process.stdout.strip().replace(nl, ",")}]', mimetype='application/json')
 
 
 if __name__ == "__main__":
