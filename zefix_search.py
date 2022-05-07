@@ -32,7 +32,7 @@ def search():
                 yield line
         process.poll()
 
-    return app.response_class(generate(), mimetype='binary/octet-stream')
+    return app.response_class(generate(), mimetype='plain/text')
     # return Response(f'[{process.stdout.strip().replace(nl, ",")}]', mimetype='application/json')
 
 
