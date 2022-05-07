@@ -1,11 +1,112 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>{% block title %} Messages {% endblock %}</h1>
-    {% for message in messages %}
-        <div class='message'>
-            <h3>{{ message['title'] }}</h3>
-            <p>{{ message['content'] }}</p>
-        </div>
-    {% endfor %}
+    <h1>{% block title %} Zefix Search {% endblock %}</h1>
+
+    <label for="search"></label>
+    <input id="search" type="text" name="title"
+           placeholder="Search string"
+           value="{{ request.form['title'] }}">
+    <button id="submit" type="submit" onclick="userAction()">Search</button>
+    <script>
+        // Get the input field
+        const input = document.getElementById("search");
+
+        // Execute a function when the user presses a key on the keyboard
+        input.addEventListener("keyup", function (event) {
+            // If the user presses the "Enter" key on the keyboard
+            if (event.key === "Enter") {
+                // Cancel the default action, if needed
+                event.preventDefault();
+                // Trigger the button element with a click
+                document.getElementById("submit").click();
+            }
+        });
+
+        function scrub_message(text) {
+            text = text.replace("&amp;amp;quot", "\"")
+            text = text.replace("&amp;amp;", "&")
+            text = text.replace("&amp;lt;", "<")
+            text = text.replace("&amp;gt;", ">")
+            text = text.replace("&amp;apos;", "'")
+            text = text.replace("&amp;quot;", "\"")
+            text = text.replace("&amp;", "&")
+            text = text.replace("&lt;", "<")
+            text = text.replace("&gt;", ">")
+            text = text.replace("&apos;", "'")
+            text = text.replace("&quot;", "\"")
+            text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
+            return text
+        }
+
+        async function* makeTextFileLineIterator(fileURL) {
+            const utf8Decoder = new TextDecoder("utf-8");
+            let response = await fetch(fileURL);
+            let reader = response.body.getReader();
+            let {value: chunk, done: readerDone} = await reader.read();
+            chunk = chunk ? utf8Decoder.decode(chunk, {stream: true}) : "";
+
+            let re = /\n+/gm;
+            let startIndex = 0;
+
+            for (;;) {
+                let result = re.exec(chunk);
+                if (!result) {
+                    if (readerDone) {
+                        break;
+                    }
+                    let remainder = chunk.substr(startIndex);
+                    ({value: chunk, done: readerDone} = await reader.read());
+                    chunk = remainder + (chunk ? utf8Decoder.decode(chunk, {stream: true}) : "");
+                    chunk = remainder + chunk;
+                    startIndex = re.lastIndex = 0;
+                    continue;
+                }
+                yield chunk.substring(startIndex, result.index);
+                startIndex = re.lastIndex;
+            }
+            if (startIndex < chunk.length) {
+                // last line didn't end in a newline char
+                yield chunk.substr(startIndex);
+            }
+        }
+
+        async function userAction() {
+            const table = document.getElementById('result')
+            const body = table.getElementsByTagName('tbody')[0]
+            body.innerHTML = ''
+
+            // const response = await fetch('/search?q=' + encodeURIComponent(document.getElementById('search').value));
+            // const myJson = await response.json();
+
+            // for (let i = 0; i < myJson.length; i++) {
+            for await (let line of makeTextFileLineIterator('/search?q=' + encodeURIComponent(document.getElementById('search').value))) {
+                myJson = JSON.parse(line)
+                // processLine(line);
+            //}
+                let tr = body.insertRow(-1);
+                let tabCell = tr.insertCell(-1);
+                tabCell.textContent = myJson['sogcPublication']['sogcId'];
+                tabCell = tr.insertCell(-1);
+                tabCell.textContent = myJson.sogcPublication.sogcDate;
+                tabCell = tr.insertCell(-1);
+                tabCell.textContent = myJson.companyShort.name;
+                tabCell = tr.insertCell(-1);
+                tabCell.textContent = scrub_message(myJson.sogcPublication.message);
+            }
+        }
+    </script>
+    <br>
+    <label>Result</label>
+    <table id="result">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Company</th>
+            <th>Text</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 {% endblock %}
