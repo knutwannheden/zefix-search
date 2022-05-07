@@ -43,21 +43,27 @@
             const utf8Decoder = new TextDecoder("utf-8");
             let response = await fetch(fileURL);
             let reader = response.body.getReader();
-            let {value: chunk, done: readerDone} = await reader.read();
-            chunk = chunk ? utf8Decoder.decode(chunk, {stream: true}) : "";
+            let {
+                value: chunk,
+                done: readerDone
+            } = await reader.read();
+            chunk = chunk ? utf8Decoder.decode(chunk, { stream: true }) : "";
 
             let re = /\n+/gm;
             let startIndex = 0;
 
-            for (;;) {
+            for (; ;) {
                 let result = re.exec(chunk);
                 if (!result) {
                     if (readerDone) {
                         break;
                     }
                     let remainder = chunk.substring(startIndex);
-                    ({value: chunk, done: readerDone} = await reader.read());
-                    chunk = remainder + (chunk ? utf8Decoder.decode(chunk, {stream: true}) : "");
+                    ({
+                        value: chunk,
+                        done: readerDone
+                    } = await reader.read());
+                    chunk = remainder + (chunk ? utf8Decoder.decode(chunk, { stream: true }) : "");
                     chunk = remainder + chunk;
                     startIndex = re.lastIndex = 0;
                     continue;
@@ -76,23 +82,24 @@
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
-            // const response = await fetch('/search?q=' + encodeURIComponent(document.getElementById('search').value));
-            // const myJson = await response.json();
+            for await (let line of
+                makeTextFileLineIterator('/search?q=' + encodeURIComponent(document.getElementById('search').value)))
+            {
+                try {
+                    let myJson = JSON.parse(line)
 
-            // for (let i = 0; i < myJson.length; i++) {
-            for await (let line of makeTextFileLineIterator('/search?q=' + encodeURIComponent(document.getElementById('search').value))) {
-                myJson = JSON.parse(line)
-                // processLine(line);
-            //}
-                let tr = body.insertRow(-1);
-                let tabCell = tr.insertCell(-1);
-                tabCell.textContent = myJson['sogcPublication']['sogcId'];
-                tabCell = tr.insertCell(-1);
-                tabCell.textContent = myJson.sogcPublication.sogcDate;
-                tabCell = tr.insertCell(-1);
-                tabCell.textContent = myJson.companyShort.name;
-                tabCell = tr.insertCell(-1);
-                tabCell.textContent = scrub_message(myJson.sogcPublication.message);
+                    let tr = body.insertRow(-1);
+                    let tabCell = tr.insertCell(-1);
+                    tabCell.textContent = myJson['sogcPublication']['sogcId'];
+                    tabCell = tr.insertCell(-1);
+                    tabCell.textContent = myJson.sogcPublication.sogcDate;
+                    tabCell = tr.insertCell(-1);
+                    tabCell.textContent = myJson.companyShort.name;
+                    tabCell = tr.insertCell(-1);
+                    tabCell.textContent = scrub_message(myJson.sogcPublication.message);
+                } catch (e) {
+                    console.log(e, line)
+                }
             }
         }
     </script>
