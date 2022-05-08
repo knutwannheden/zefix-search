@@ -55,18 +55,20 @@
 
         var i = 0;
         var width = 0;
+        var done = false;
         function move() {
             if (i == 0) {
                 i = 1;
                 var elem = document.getElementById("myBar");
                 var id = setInterval(frame, 50);
                 function frame() {
-                    if (width >= 100) {
+                    if (done) {
                         elem.style.width = "100%";
                         clearInterval(id);
                         i = 0;
+                        width = 100;
                     } else {
-                        width++;
+                        width = (width + 1) % 100;
                         elem.style.width = width + "%";
                     }
                 }
@@ -115,7 +117,7 @@
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
-            i = 0; width = 0;
+            i = 0; width = 0; done = false;
             move();
 
             for await (let line of
@@ -140,7 +142,7 @@
                 } catch (e) {
                     console.log(e, line)
                 }
-                i = 0; width = 100;
+                i = 0; width = 100; done = true;
             }
         }
     </script>
