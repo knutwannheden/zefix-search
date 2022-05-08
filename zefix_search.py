@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 import regex
 from dotenv import dotenv_values
@@ -20,7 +21,7 @@ def search():
     query = '\\b' + '[^;]{0,20}'.join(regex.split('[\\s,.;]+', request.args.get('q'))) + '\\b'
     process = subprocess.Popen(
         ['rg', '--search-zip', '--text', '--no-filename', '--no-line-number', '--ignore-case',
-            query, f'{config["ZEFIX_DIR"]}/../zefix.tar.zst'], stdout=subprocess.PIPE)
+         query, *[str(p) for p in Path(f'{config["ZEFIX_DIR"]}/../').glob('zefix-*.tar.zst')]], stdout=subprocess.PIPE)
 
     def generate():
         while process.poll() is None:
