@@ -1,6 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    <style>
+        #myProgress {
+            width: 100%;
+            background-color: #ddd;
+        }
+
+        #myBar {
+            width: 0%;
+            height: 30px;
+            background-color: #04AA6D;
+        }
+    </style>
+
     <h1>{% block title %} Zefix Search {% endblock %}</h1>
 
     <label for="search"></label>
@@ -38,6 +51,26 @@
             text = text.replace(/<[A-Z]>([^<]+)<E>/g, '$1')
             text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
             return text
+        }
+
+        var i = 0;
+        var width = 0;
+        function move() {
+            if (i == 0) {
+                i = 1;
+                var elem = document.getElementById("myBar");
+                var id = setInterval(frame, 50);
+                function frame() {
+                    if (width >= 100) {
+                        elem.style.width = "100%";
+                        clearInterval(id);
+                        i = 0;
+                    } else {
+                        width++;
+                        elem.style.width = width + "%";
+                    }
+                }
+            }
         }
 
         async function* makeTextFileLineIterator(fileURL) {
@@ -82,6 +115,9 @@
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
+            i = 0; width = 0;
+            move();
+
             for await (let line of
                 makeTextFileLineIterator('search?q=' + encodeURIComponent(document.getElementById('search').value)))
             {
@@ -104,9 +140,13 @@
                 } catch (e) {
                     console.log(e, line)
                 }
+                i = 0; width = 100;
             }
         }
     </script>
+    <div id="myProgress">
+        <div id="myBar"></div>
+    </div>
     <br>
     <label>Result</label>
     <table id="result">
