@@ -18,7 +18,7 @@ def index():
 
 @app.route('/search')
 def search():
-    query = '\\b' + '[^;]{0,20}'.join(regex.split('[\\s,.;]+', request.args.get('q'))) + '\\b'
+    query = '\\b' + '[^;]{0,30}'.join(regex.split('[\\s,.;]+', request.args.get('q'))) + '\\b'
     process = subprocess.Popen(
         ['rg', '--search-zip', '--text', '--no-filename', '--no-line-number', '--ignore-case',
          query, *[str(p) for p in Path(f'{config["ZEFIX_DIR"]}/../').glob('zefix-*.tar.zst')]], stdout=subprocess.PIPE)

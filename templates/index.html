@@ -14,6 +14,14 @@
             height: 30px;
             background-color: #04AA6D;
         }
+
+        #instructions {
+            background-color: #f2f2f2;
+        }
+
+        #results {
+            display: none;
+        }
     </style>
 
     <h1>{% block title %} Zefix Search {% endblock %}</h1>
@@ -113,13 +121,16 @@
         var chid_cache = {}
 
         async function userAction() {
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
             const table = document.getElementById('result')
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
             let progress = document.getElementById("myBar");
-            let i = 0;
-            progress.innerText = i + ' matches';
+            let match_count = 0;
+            progress.innerText = match_count + ' matches';
             width = 0;
             move();
 
@@ -177,7 +188,8 @@
 
                     tabCell = tr.insertCell(-1);
                     tabCell.textContent = scrub_message(myJson.sogcPublication.message);
-                    progress.innerText = i++ + ' matches';
+                    match_count++;
+                    progress.innerText = match_count + ' matches';
                 } catch (e) {
                     console.log(e, line)
                 }
@@ -189,16 +201,38 @@
         <div id="myBar"></div>
     </div>
     <br>
-    <label>Result</label>
-    <table id="result">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Company</th>
-            <th>Text</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <div id="instructions">
+        Instructions and matching rules:
+        <p>
+        <ul>
+            <li>Search terms are case-insensitive, but must otherwise be exact matches (<i>house</i> does <b>not</b> match
+                <i>houses</i> or vice-versa)
+            </li>
+            <li>In the case of multiple search terms the order is relevant (must appear in the same order in matched text), but up
+                to 30 additional characters may appear in between two consecutive search terms
+            </li>
+        </ul>
+        </p>
+    </div>
+    <div id="results">
+        <label>Result</label>
+        <table id="result">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Company</th>
+                <th>Text</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="attribution">
+        <p>
+            <a href="https://www.zefix.admin.ch/ZefixPublicREST/swagger-ui/index.html?configUrl=/ZefixPublicREST/v3/api-docs/swagger-config">Swiss
+                Official Gazette of Commerce (SOGC) data</a> by <a href="https://www.zefix.admin.ch/">Federal Registry of
+            Commerce</a> is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+        </p>
+    </div>
 {% endblock %}
