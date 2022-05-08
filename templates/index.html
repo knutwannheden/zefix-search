@@ -131,8 +131,11 @@
 
                     let tr = body.insertRow(-1);
                     let tabCell = tr.insertCell(-1);
+                    {#tabCell.innerHTML =#}
+                    {#    `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/' + myJson.companyShort.ehraid + '#shabPub-'#}
+                    {#                + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;#}
                     tabCell.innerHTML =
-                        `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/' + myJson.companyShort.ehraid + '#shabPub-'
+                        `<a href="${'https://www.shab.ch/shabforms/servlet/Search?EID=7&DOCID='
                                     + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
                     tabCell = tr.insertCell(-1);
                     tabCell.textContent = myJson.sogcPublication.sogcDate;
