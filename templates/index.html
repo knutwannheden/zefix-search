@@ -5,6 +5,8 @@
         #myProgress {
             width: 100%;
             background-color: #ddd;
+            text-align: center;
+            line-height: 30px;
         }
 
         #myBar {
@@ -53,24 +55,20 @@
             return text
         }
 
-        var i = 0;
         var width = 0;
-        var done = false;
+
         function move() {
-            if (i == 0) {
-                i = 1;
-                var elem = document.getElementById("myBar");
-                var id = setInterval(frame, 50);
-                function frame() {
-                    if (done) {
-                        elem.style.width = "100%";
-                        clearInterval(id);
-                        i = 0;
-                        width = 100;
-                    } else {
-                        width = (width + 1) % 100;
-                        elem.style.width = width + "%";
-                    }
+            var elem = document.getElementById("myBar");
+            var id = setInterval(frame, 50);
+
+            function frame() {
+                if (width === 100) {
+                    elem.style.width = "100%";
+                    clearInterval(id);
+                }
+                else {
+                    width = (width + 1) % 100;
+                    elem.style.width = width + "%";
                 }
             }
         }
@@ -117,7 +115,10 @@
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
-            i = 0; width = 0; done = false;
+            let progress = document.getElementById("myBar");
+            let i = 0;
+            progress.innerText = i + ' matches';
+            width = 0;
             move();
 
             for await (let line of
@@ -139,11 +140,12 @@
                                     + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a>`;
                     tabCell = tr.insertCell(-1);
                     tabCell.textContent = scrub_message(myJson.sogcPublication.message);
+                    progress.innerText = i++ + ' matches';
                 } catch (e) {
                     console.log(e, line)
                 }
-                i = 0; width = 100; done = true;
             }
+            width = 100;
         }
     </script>
     <div id="myProgress">
