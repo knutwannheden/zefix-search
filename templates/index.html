@@ -40,7 +40,7 @@
         <input id="search" type="text" name="title"
                style="width: 50%; margin: 0 auto;"
                placeholder="Search string"
-               value="{{ request.form['title'] }}">
+               value="{{ request.args.get('q') or '' }}">
         <button id="submit" type="submit" onclick="userAction()">Search</button>
     </div>
     <script>
@@ -133,6 +133,12 @@
         var chid_cache = {}
 
         async function userAction() {
+            const query = encodeURIComponent(document.getElementById('search').value);
+            if (history.pushState) {
+                let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?q=' + query;
+                window.history.pushState({path:newurl}, '', newurl);
+            }
+
             document.getElementById('instructions').style.display = 'none';
             document.getElementById('results').style.display = 'block';
 
@@ -147,7 +153,7 @@
             move();
 
             for await (let line of
-                makeTextFileLineIterator('search?q=' + encodeURIComponent(document.getElementById('search').value)))
+                makeTextFileLineIterator('search?q=' + query))
             {
                 try {
                     let myJson = JSON.parse(line)
@@ -205,6 +211,12 @@
             }
             width = 100;
         }
+
+        window.addEventListener("load", function() {
+            if (document.getElementById('search').value.length > 0) {
+                userAction();
+            }
+        });
     </script>
     <div id="myProgress">
         <div id="myBar"></div>
