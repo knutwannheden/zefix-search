@@ -3,15 +3,16 @@
 {% block content %}
     <style>
         #myProgress {
-            width: 100%;
+            width: 75%;
             background-color: #ddd;
             text-align: center;
-            line-height: 30px;
+            line-height: 20px;
+            margin: 0 auto;
         }
 
         #myBar {
             width: 0%;
-            height: 30px;
+            height: 20px;
             background-color: #04AA6D;
         }
 
@@ -22,15 +23,24 @@
         #results {
             display: none;
         }
+
+        div.content {
+            width: 50%;
+            margin: 0 auto;
+            text-align: center;
+        }
     </style>
 
     <h1>{% block title %} Zefix Search {% endblock %}</h1>
 
-    <label for="search"></label>
-    <input id="search" type="text" name="title"
-           placeholder="Search string"
-           value="{{ request.form['title'] }}">
-    <button id="submit" type="submit" onclick="userAction()">Search</button>
+    <div style="margin: 0 auto; width: 100%; text-align: center; margin-bottom: 20px">
+        <label for="search"></label>
+        <input id="search" type="text" name="title"
+               style="width: 75%; margin: 0 auto;"
+               placeholder="Search string"
+               value="{{ request.form['title'] }}">
+        <button id="submit" type="submit" onclick="userAction()">Search</button>
+    </div>
     <script>
         // Get the input field
         const input = document.getElementById("search");
@@ -142,9 +152,6 @@
 
                     let tr = body.insertRow(-1);
                     let tabCell = tr.insertCell(-1);
-                    {#tabCell.innerHTML =#}
-                    {#    `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/' + myJson.companyShort.ehraid + '#shabPub-'#}
-                    {#                + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;#}
                     tabCell.innerHTML =
                         `<a href="${'https://www.shab.ch/shabforms/servlet/Search?EID=7&DOCID='
                                     + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
@@ -201,7 +208,7 @@
         <div id="myBar"></div>
     </div>
     <br>
-    <div id="instructions">
+    <div id="instructions" style="text-align: left">
         Instructions and matching rules:
         <p>
         <ul>
@@ -217,7 +224,7 @@
         </ul>
         </p>
     </div>
-    <div id="results">
+    <div id="results" style="text-align: left">
         <label>Result</label>
         <table id="result">
             <thead>
