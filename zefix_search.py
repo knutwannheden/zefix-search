@@ -18,7 +18,7 @@ def index():
 
 @app.route('/search')
 def search():
-    query = '\\b' + '[^;]{0,30}'.join(
+    query = '\\b' + '\\b[^;]{0,30}\\b'.join(
         [re.escape(s.strip('"')) for s in re.findall('(".*?"|[^ ,.;]+)', request.args.get('q'))]) + '\\b'
     process = subprocess.Popen(
         ['rg', '--search-zip', '--text', '--no-filename', '--no-line-number', '--ignore-case',
