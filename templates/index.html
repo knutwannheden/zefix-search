@@ -5,7 +5,8 @@
         #myProgress {
             width: 50%;
             background-color: #ddd;
-            text-align: center;
+            text-align: left;
+            text-indent: 10px;
             line-height: 20px;
             margin: 0 auto;
         }
@@ -40,7 +41,8 @@
         <input id="search" type="text" name="title"
                style="width: 50%; margin: 0 auto;"
                placeholder="Search string"
-               value="{{ request.args.get('q') or '' }}">
+               value="{{ request.args.get('q') or '' }}"
+               autofocus>
         <button id="submit" type="submit" onclick="userAction()">Search</button>
     </div>
     <script>
@@ -80,10 +82,12 @@
         function move() {
             var elem = document.getElementById("myBar");
             var id = setInterval(frame, 50);
+            elem.style.backgroundColor = "#04AA6D";
 
             function frame() {
                 if (width === 100) {
                     elem.style.width = "100%";
+                    elem.style.backgroundColor = "#ADD8E6";
                     clearInterval(id);
                 }
                 else {
@@ -148,7 +152,7 @@
 
             let progress = document.getElementById("myBar");
             let match_count = 0;
-            progress.innerText = match_count + ' matches';
+            progress.innerText = match_count + '\u00A0matches';
             width = 0;
             move();
 
@@ -204,7 +208,7 @@
                     tabCell = tr.insertCell(-1);
                     tabCell.textContent = scrub_message(myJson.sogcPublication.message);
                     match_count++;
-                    progress.innerText = match_count + ' matches';
+                    progress.innerText = match_count + '\u00A0matches';
                 } catch (e) {
                     console.log(e, line)
                 }
@@ -239,7 +243,6 @@
         </p>
     </div>
     <div id="results" style="text-align: left">
-        <label>Result</label>
         <table id="result">
             <thead>
             <tr>
