@@ -96,7 +96,7 @@
         function frame() {
             if (width === 100) {
                 elem.style.width = "100%";
-                elem.style.backgroundColor = "#4695eb";
+                elem.style.backgroundColor = elem.innerText.includes('+') ? "#eff265" : "#4695eb";
                 clearInterval(id);
             }
             else {
@@ -209,7 +209,11 @@
 
         for await (let line of makeTextFileLineIterator('search?q=' + query)) {
             try {
-                let myJson = JSON.parse(line)
+                if (line === '...') {
+                    progress.innerText = match_count + '+\u00A0matches';
+                    break;
+                }
+                let myJson = JSON.parse(line.charAt(0) === '{' ? line : line.substring(line.indexOf('{')));
 
                 let tr = body.insertRow(-1);
                 let tabCell = tr.insertCell(-1);

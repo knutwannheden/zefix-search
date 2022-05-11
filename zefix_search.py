@@ -25,9 +25,18 @@ def search():
          query, *[str(p) for p in Path(f'{config["ZEFIX_DIR"]}/../').glob('zefix-*.tar.zst')]], stdout=subprocess.PIPE)
 
     def generate():
-        while process.poll() is None:
-            for line in iter(process.stdout.readline, b''):
-                yield line
+        try:
+            count = 0
+            while process.poll() is None:
+                for line in iter(process.stdout.readline, b''):
+                    yield line
+                    count += 1
+                    if count == 5000:
+                        yield '...\n'
+                        return
+        finally:
+            print('done')
+            process.terminate()
 
     return app.response_class(generate(), mimetype='plain/text')
 
