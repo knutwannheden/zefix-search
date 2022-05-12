@@ -1,321 +1,325 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<style>
-    * {
-        font-family: 'Montserrat', sans-serif;
-    }
-
-    span.z-highlight {
-        background-color: #4695eb;
-        color: black;
-    }
-
-    #myProgress {
-        width: 50%;
-        background-color: #ddd;
-        text-align: left;
-        text-indent: 10px;
-        line-height: 20px;
-        margin: 0 auto;
-    }
-
-    #myBar {
-        width: 0%;
-        height: 20px;
-        background-color: #04AA6D;
-    }
-
-    #instructions {
-        background-color: #f2f2f2;
-        width: 80%;
-        margin: 0 auto;
-    }
-
-    #results {
-        display: none;
-    }
-
-    div.content {
-        width: 100%;
-        margin: 0 auto;
-        text-align: center;
-    }
-</style>
-
-<h1>{% block title %} Zefix Search {% endblock %}</h1>
-
-<div style="margin: 0 auto; width: 100%; text-align: center; margin-bottom: 20px">
-    <label for="search"></label>
-    <input id="search" type="text" name="title"
-           style="width: 50%; margin: 0 auto;"
-           placeholder="Search string"
-           value="{{ request.args.get('q') or '' }}"
-           autofocus>
-    <button id="submit" type="submit" onclick="userAction()">Search</button>
-</div>
-<script>
-    // Get the input field
-    const input = document.getElementById("search");
-
-    // Execute a function when the user presses a key on the keyboard
-    input.addEventListener("keyup", function (event) {
-        // If the user presses the "Enter" key on the keyboard
-        if (event.key === "Enter") {
-            // Cancel the default action, if needed
-            event.preventDefault();
-            // Trigger the button element with a click
-            document.getElementById("submit").click();
-        }
-    });
-
-    function scrub_message(text) {
-        text = text.replace(/&amp;amp;quot/g, "\"")
-        text = text.replace(/&amp;amp;/g, "&")
-        text = text.replace(/&amp;lt;/, "<")
-        text = text.replace(/&amp;gt;/g, ">")
-        text = text.replace(/amp;apos;/g, "'")
-        text = text.replace(/&amp;quot;/g, "\"")
-        text = text.replace(/&amp;/g, "&")
-        text = text.replace(/&lt;/g, "<")
-        text = text.replace(/&gt;/g, ">")
-        text = text.replace(/&apos;/g, "'")
-        text = text.replace(/&quot;/g, "\"")
-        text = text.replace(/<[A-Z]>([^<]+)<E>/g, '$1')
-        text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
-        return text
-    }
-
-    var width = 0;
-
-    function move() {
-        var elem = document.getElementById("myBar");
-        var id = setInterval(frame, 50);
-        elem.style.backgroundColor = "#04AA6D";
-
-        function frame() {
-            if (width === 100) {
-                elem.style.width = "100%";
-                elem.style.backgroundColor = elem.innerText.includes('+') ? "#eff265" : "#4695eb";
-                clearInterval(id);
-            }
-            else {
-                width = (width + 1) % 100;
-                elem.style.width = width + "%";
-            }
-        }
-    }
-
-    async function* makeTextFileLineIterator(fileURL) {
-        const utf8Decoder = new TextDecoder("utf-8");
-        let response = await fetch(fileURL);
-        let reader = response.body.getReader();
-        let {
-            value: chunk,
-            done: readerDone
-        } = await reader.read();
-        chunk = chunk ? utf8Decoder.decode(chunk, { stream: true }) : "";
-
-        let re = /\n+/gm;
-        let startIndex = 0;
-
-        for (; ;) {
-            let result = re.exec(chunk);
-            if (!result) {
-                if (readerDone) {
-                    break;
-                }
-                let remainder = chunk.substring(startIndex);
-                ({
-                    value: chunk,
-                    done: readerDone
-                } = await reader.read());
-                chunk = remainder + (chunk ? utf8Decoder.decode(chunk, { stream: true }) : "");
-                startIndex = re.lastIndex = 0;
-                continue;
-            }
-            yield chunk.substring(startIndex, result.index);
-            startIndex = re.lastIndex;
-        }
-        if (startIndex < chunk.length) {
-            // last line didn't end in a newline char
-            yield chunk.substring(startIndex);
-        }
-    }
-
-    function highlightInternal(e, re) {
-        let match;
-        let localMatches = [];
-        while (match = re.exec(e.textContent)) {
-            localMatches.push(match);
-        }
-        for (var j = localMatches.length; j-- > 0;) {
-            match = localMatches[j];
-            if (e.nodeType === 3) {
-                let span = document.createElement("span");
-                span.classList.add('z-highlight');
-                span.textContent = match[0];
-                e.splitText(match.index);
-                e.nextSibling.splitText(match[0].length);
-                e.parentNode.replaceChild(span, e.nextSibling);
-            }
-            else {
-                e.classList.add('z-highlight');
-            }
-        }
-    }
-
-    function highlight(element, re) {
-        let nodes = element.childNodes;
-        for (var i = nodes.length; i-- > 0;) {
-            const e = nodes[i];
-            if (e.nodeType === 3) {
-                highlightInternal(e, re);
-            }
-            else if (e.nodeType === 1 && ['script', 'style'].includes(e.tagName.toLowerCase())) {
-                // don't descend into JavaScript and CSS
-            }
-            else {
-                highlight(e, re);  // Not a text node or leaf, so check it's children
-            }
-        }
-    }
-
-    var chid_cache = {}
-
-    async function userAction() {
-        const re = RegExp('\\b' + Array.from(document.getElementById('search').value.matchAll('\".*?\"|[^ ,.;]+'))
-            .map(r => r[0].replaceAll('^\"|\"$', ""))
-            .join('\\b[^;]{0,30}\\b') + '\\b', 'gid');
-
-        const query = encodeURIComponent(document.getElementById('search').value);
-        if (history.pushState) {
-            let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?q=' + query;
-            window.history.pushState({ path: newurl }, '', newurl);
+    <style>
+        * {
+            font-family: 'Montserrat', sans-serif;
         }
 
-        document.getElementById('instructions').style.display = 'none';
-        document.getElementById('results').style.display = 'block';
+        span.z-highlight {
+            background-color: #4695eb;
+            color: black;
+        }
 
-        const table = document.getElementById('result')
-        const body = table.getElementsByTagName('tbody')[0]
-        body.innerHTML = ''
+        #myProgress {
+            width: 50%;
+            background-color: #ddd;
+            text-align: left;
+            text-indent: 10px;
+            line-height: 20px;
+            margin: 0 auto;
+        }
 
-        let progress = document.getElementById("myBar");
-        let match_count = 0;
-        progress.innerText = match_count + '\u00A0matches';
-        width = 0;
-        move();
+        #myBar {
+            width: 0%;
+            height: 20px;
+            background-color: #04AA6D;
+        }
 
-        for await (let line of makeTextFileLineIterator('search2?q=' + query)) {
-            try {
-                if (line === '...') {
-                    progress.innerText = match_count + '+\u00A0matches';
-                    break;
-                }
-                let myJson = JSON.parse(line.charAt(0) === '{' ? line : line.substring(line.indexOf('{')));
+        #instructions {
+            background-color: #f2f2f2;
+            width: 80%;
+            margin: 0 auto;
+        }
 
-                let tr = body.insertRow(-1);
-                let tabCell = tr.insertCell(-1);
-                tabCell.innerHTML =
-                    `<a href="${'https://www.shab.ch/shabforms/servlet/Search?EID=7&DOCID='
-                                + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
-                tabCell = tr.insertCell(-1);
-                tabCell.textContent = myJson.sogcPublication.sogcDate;
-                const companyCell = tr.insertCell(-1);
-                if (myJson.companyShort.name) {
-                    companyCell.innerHTML =
-                        `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                    + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a>`;
-                }
-                else if (chid_cache[myJson.companyShort.chid]) {
-                    companyCell.innerHTML =
-                        `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                    + chid_cache[myJson.companyShort.chid].ehraid}">${chid_cache[myJson.companyShort.chid].name}</a>`;
+        #results {
+            display: none;
+        }
+
+        div.content {
+            width: 100%;
+            margin: 0 auto;
+            text-align: center;
+        }
+    </style>
+
+    <h1>{% block title %} Zefix Search {% endblock %}</h1>
+
+    <div style="margin: 0 auto; width: 100%; text-align: center; margin-bottom: 20px">
+        <label for="search"></label>
+        <input id="search" type="text" name="title"
+               style="width: 50%; margin: 0 auto;"
+               placeholder="Search string"
+               value="{{ request.args.get('q') or '' }}"
+               autofocus>
+        <button id="submit" type="submit" onclick="userAction()">Search</button>
+    </div>
+    <script>
+        // Get the input field
+        const input = document.getElementById("search");
+
+        // Execute a function when the user presses a key on the keyboard
+        input.addEventListener("keyup", function (event) {
+            // If the user presses the "Enter" key on the keyboard
+            if (event.key === "Enter") {
+                // Cancel the default action, if needed
+                event.preventDefault();
+                // Trigger the button element with a click
+                document.getElementById("submit").click();
+            }
+        });
+
+        function scrub_message(text) {
+            text = text.replace(/&amp;amp;quot/g, "\"")
+            text = text.replace(/&amp;amp;/g, "&")
+            text = text.replace(/&amp;lt;/, "<")
+            text = text.replace(/&amp;gt;/g, ">")
+            text = text.replace(/amp;apos;/g, "'")
+            text = text.replace(/&amp;quot;/g, "\"")
+            text = text.replace(/&amp;/g, "&")
+            text = text.replace(/&lt;/g, "<")
+            text = text.replace(/&gt;/g, ">")
+            text = text.replace(/&apos;/g, "'")
+            text = text.replace(/&quot;/g, "\"")
+            text = text.replace(/<[A-Z]>([^<]+)<E>/g, '$1')
+            text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
+            return text
+        }
+
+        var width = 0;
+
+        function move() {
+            var elem = document.getElementById("myBar");
+            var id = setInterval(frame, 50);
+            elem.style.backgroundColor = "#04AA6D";
+
+            function frame() {
+                if (width === 100) {
+                    elem.style.width = "100%";
+                    elem.style.backgroundColor = elem.innerText.includes('+') ? "#eff265" : "#4695eb";
+                    clearInterval(id);
                 }
                 else {
-                    companyCell.innerText = myJson.companyShort.chid;
-                    fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
-                        mode: 'cors',
-                        method: 'POST',
-                        body: JSON.stringify({
-                            name: myJson.companyShort.chid,
-                            deletedFirms: true,
-                            offset: 0,
-                            languageKey: 'en',
-                            maxEntries: 1
-                        }),
-                        headers: {
-                            'Accept': 'application/json, text/plain, */*',
-                            'Accept-Encoding': 'gzip, deflate, br',
-                            'Content-Type': 'application/json',
-                        }
-                    }).then(resp => {
-                        resp.json().then(json => {
-                            chid_cache[myJson.companyShort.chid] = json.list[0];
-                            companyCell.innerHTML =
-                                `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                            + json.list[0].ehraid}">${json.list[0].name}</a>`;
-                        })
-                    })
+                    width = (width + 1) % 100;
+                    elem.style.width = width + "%";
                 }
-
-                tabCell = tr.insertCell(-1);
-                tabCell.textContent = scrub_message(myJson.sogcPublication.message);
-                highlight(tabCell, re);
-                match_count++;
-                progress.innerText = match_count + '\u00A0matches';
-            } catch (e) {
-                console.log(e, line)
             }
         }
-        width = 100;
-    }
 
-    window.addEventListener("load", function () {
-        if (document.getElementById('search').value.length > 0) {
-            userAction();
+        async function* makeTextFileLineIterator(fileURL) {
+            const utf8Decoder = new TextDecoder("utf-8");
+            let response = await fetch(fileURL);
+            let reader = response.body.getReader();
+            let {
+                value: chunk,
+                done: readerDone
+            } = await reader.read();
+            chunk = chunk ? utf8Decoder.decode(chunk, { stream: true }) : "";
+
+            let re = /\n+/gm;
+            let startIndex = 0;
+
+            for (; ;) {
+                let result = re.exec(chunk);
+                if (!result) {
+                    if (readerDone) {
+                        break;
+                    }
+                    let remainder = chunk.substring(startIndex);
+                    ({
+                        value: chunk,
+                        done: readerDone
+                    } = await reader.read());
+                    chunk = remainder + (chunk ? utf8Decoder.decode(chunk, { stream: true }) : "");
+                    startIndex = re.lastIndex = 0;
+                    continue;
+                }
+                yield chunk.substring(startIndex, result.index);
+                startIndex = re.lastIndex;
+            }
+            if (startIndex < chunk.length) {
+                // last line didn't end in a newline char
+                yield chunk.substring(startIndex);
+            }
         }
-    });
-</script>
-<div id="myProgress">
-    <div id="myBar"></div>
-</div>
-<br>
-<div id="instructions" style="text-align: left">
-    Instructions and matching rules:
-    <p>
-    <ul>
-        <li>Search terms are case-insensitive, but must otherwise be exact matches (<i>house</i> does <b>not</b> match
-            <i>houses</i> or vice-versa)
-        </li>
-        <li>In the case of multiple search terms (separated by space) the order is relevant (must appear in the same order in
-            matched text), but up to 30 additional characters may appear in between two consecutive search terms
-        </li>
-        <li>To enforce exact matching of consecutive words, surround the search term with <i>double quotes</i> (e.g. <i>&quot;van
-            halen&quot;</i>)
-        </li>
-    </ul>
-    </p>
-</div>
-<div id="results" style="text-align: left">
-    <table id="result">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Company</th>
-            <th>Text</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>
-<div id="attribution">
-    <p><i>
-        <a href="https://www.zefix.admin.ch/ZefixPublicREST/swagger-ui/index.html?configUrl=/ZefixPublicREST/v3/api-docs/swagger-config">Swiss
-            Official Gazette of Commerce (SOGC) data</a> by <a href="https://www.zefix.admin.ch/">Federal Registry of
-        Commerce</a> is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
-    </i></p>
-</div>
+
+        function highlightInternal(e, re) {
+            let match;
+            let localMatches = [];
+            while (match = re.exec(e.textContent)) {
+                localMatches.push(match);
+            }
+            for (var j = localMatches.length; j-- > 0;) {
+                match = localMatches[j];
+                if (e.nodeType === 3) {
+                    let span = document.createElement("span");
+                    span.classList.add('z-highlight');
+                    span.textContent = match[0];
+                    e.splitText(match.index);
+                    e.nextSibling.splitText(match[0].length);
+                    e.parentNode.replaceChild(span, e.nextSibling);
+                }
+                else {
+                    e.classList.add('z-highlight');
+                }
+            }
+        }
+
+        function highlight(element, re) {
+            let nodes = element.childNodes;
+            for (var i = nodes.length; i-- > 0;) {
+                const e = nodes[i];
+                if (e.nodeType === 3) {
+                    highlightInternal(e, re);
+                }
+                else if (e.nodeType === 1 && ['script', 'style'].includes(e.tagName.toLowerCase())) {
+                    // don't descend into JavaScript and CSS
+                }
+                else {
+                    highlight(e, re);  // Not a text node or leaf, so check it's children
+                }
+            }
+        }
+
+        var chid_cache = {}
+
+        async function userAction() {
+            const re = RegExp('\\b' + Array.from(document.getElementById('search').value.matchAll('\".*?\"|[^ ,.;]+'))
+                .map(r => r[0].replaceAll('^\"|\"$', ""))
+                .join('\\b[^;]{0,30}\\b') + '\\b', 'gid');
+
+            const query = encodeURIComponent(document.getElementById('search').value);
+            if (history.pushState) {
+                let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?q=' + query;
+                window.history.pushState({ path: newurl }, '', newurl);
+            }
+
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const table = document.getElementById('result')
+            const body = table.getElementsByTagName('tbody')[0]
+            body.innerHTML = ''
+
+            let progress = document.getElementById("myBar");
+            let match_count = 0;
+            progress.innerText = match_count + '\u00A0matches';
+            width = 0;
+            move();
+
+            for await (let line of makeTextFileLineIterator('search2?q=' + query)) {
+                try {
+                    if (line === '...') {
+                        progress.innerText = match_count + '+\u00A0matches';
+                        break;
+                    }
+                    let myJson = JSON.parse(line.charAt(0) === '{' ? line : line.substring(line.indexOf('{')));
+
+                    let tr = body.insertRow(-1);
+                    let tabCell = tr.insertCell(-1);
+                    tabCell.innerHTML =
+                        `<a href="${'https://www.shab.ch/shabforms/servlet/Search?EID=7&DOCID='
+                                    + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
+                    tabCell = tr.insertCell(-1);
+                    tabCell.textContent = myJson.sogcPublication.sogcDate;
+                    const companyCell = tr.insertCell(-1);
+                    if (myJson.companyShort.name) {
+                        companyCell.innerHTML =
+                            `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                        + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a>`;
+                    }
+                    else if (chid_cache[myJson.companyShort.chid]) {
+                        companyCell.innerHTML =
+                            `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                        + chid_cache[myJson.companyShort.chid].ehraid}">${chid_cache[myJson.companyShort.chid].name}</a>`;
+                    }
+                    else {
+                        companyCell.innerText = myJson.companyShort.chid;
+                        fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
+                            mode: 'cors',
+                            method: 'POST',
+                            body: JSON.stringify({
+                                name: myJson.companyShort.chid,
+                                deletedFirms: true,
+                                offset: 0,
+                                languageKey: 'en',
+                                maxEntries: 1
+                            }),
+                            headers: {
+                                'Accept': 'application/json, text/plain, */*',
+                                'Accept-Encoding': 'gzip, deflate, br',
+                                'Content-Type': 'application/json',
+                            }
+                        }).then(resp => {
+                            resp.json().then(json => {
+                                chid_cache[myJson.companyShort.chid] = json.list[0];
+                                companyCell.innerHTML =
+                                    `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                                + json.list[0].ehraid}">${json.list[0].name}</a>`;
+                            })
+                        })
+                    }
+
+                    tabCell = tr.insertCell(-1);
+                    tabCell.textContent = scrub_message(myJson.sogcPublication.message);
+                    highlight(tabCell, re);
+                    match_count++;
+                    progress.innerText = match_count + '\u00A0matches';
+                } catch (e) {
+                    console.log(e, line)
+                }
+            }
+            width = 100;
+        }
+
+        window.addEventListener("load", function () {
+            if (document.getElementById('search').value.length > 0) {
+                userAction();
+            }
+        });
+    </script>
+    <div id="myProgress">
+        <div id="myBar"></div>
+    </div>
+    <br>
+    <div id="instructions" style="text-align: left">
+        Instructions and matching rules:
+        <p>
+        <ul>
+            <li>Search terms are case-insensitive, but must otherwise be exact matches (<i>house</i> does <b>not</b> match
+                <i>houses</i> or vice-versa); it is however possible to do prefix matching with
+                <pre>*</pre>
+                (where <i>house*</i> would
+                also match <i>houses</i>)
+            </li>
+            </li>
+            <li>In the case of multiple search terms (separated by space) the order is not relevant, but in the matched document
+                the terms must be a maximum of five words apart
+            </li>
+            <li>To enforce exact matching of consecutive words, surround the search term with <i>double quotes</i> (e.g. <i>&quot;van
+                halen&quot;</i>)
+            </li>
+        </ul>
+        </p>
+    </div>
+    <div id="results" style="text-align: left">
+        <table id="result">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Company</th>
+                <th>Text</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="attribution">
+        <p><i>
+            <a href="https://www.zefix.admin.ch/ZefixPublicREST/swagger-ui/index.html?configUrl=/ZefixPublicREST/v3/api-docs/swagger-config">Swiss
+                Official Gazette of Commerce (SOGC) data</a> by <a href="https://www.zefix.admin.ch/">Federal Registry of
+            Commerce</a> is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+        </i></p>
+    </div>
 {% endblock %}
