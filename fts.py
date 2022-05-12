@@ -27,7 +27,7 @@ def insert_json_batch(chunk):
 chunk_size = 10000
 chunk = []
 
-with open(f'{config["ZEFIX_DIR"]}/../pub.csv', 'r') as f:
+with open(f'{config["ZEFIX_DIR"]}/../pub2003-2016.txt', 'r') as f:
     csv.field_size_limit(sys.maxsize)
     r = csv.reader(f, delimiter='\t')
     next(r)
