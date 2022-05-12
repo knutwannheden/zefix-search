@@ -51,7 +51,7 @@ def search2():
     def generate():
         cur = conn.cursor()
         try:
-            cur.execute('select company, publ_date, publ_id, publ_message from zefix where publ_message match ?', (query,))
+            cur.execute('select company_name, company_ehraid, company_chid, publ_date, publ_id, publ_message from zefix where publ_message match ?', (query,))
             count = 0
             while True:
                 result = cur.fetchmany(100)
@@ -59,7 +59,7 @@ def search2():
                     return
                 else:
                     for row in result:
-                        yield f'{{"sogcPublication":{{"sogcId":{row[2]}, "sogcDate":"{row[1]}", "message":{json.dumps(row[3])}}}, "companyShort":{{"chid":{json.dumps(row[0])}}}}}\n'
+                        yield f'{{"sogcPublication":{{"sogcId":{row[4]}, "sogcDate":"{row[3]}", "message":{json.dumps(row[5])}}}, "companyShort":{{"name":{json.dumps(row[0])},"ehraid":{json.dumps(row[1])},"chid":{json.dumps(row[2])}}}}}\n'
                         count += 1
                         if count == 5000:
                             yield '...\n'
