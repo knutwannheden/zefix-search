@@ -34,7 +34,7 @@ def search():
                 for line in iter(process.stdout.readline, b''):
                     yield line
                     count += 1
-                    if count == 5000:
+                    if count == 2000:
                         yield '...\n'
                         return
         finally:
@@ -60,7 +60,7 @@ def search2():
                     for row in result:
                         yield f'{{"sogcPublication":{{"sogcId":{row[4]}, "sogcDate":"{row[3]}", "message":{json.dumps(row[5])}}}, "companyShort":{{"name":{json.dumps(row[0])},"ehraid":{json.dumps(row[1])},"chid":{json.dumps(row[2])}}}}}\n'
                         count += 1
-                        if count == 5000:
+                        if count == 2000:
                             yield '...\n'
                             return
         finally:
