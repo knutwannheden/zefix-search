@@ -15,7 +15,7 @@ cur.execute('create virtual table zefix using fts5(company_name, company_ehraid,
 
 
 def insert_csv_batch(chunk):
-    cur.executemany('insert into zefix(company_chid, publ_date, publ_id, publ_message) values (?,?,?,?)', chunk)
+    cur.executemany('insert into zefix(company_chid, publ_date, publ_id, publ_message) values (?,?,?,?)', [(r[0], r[4], r[6], r[7]) for r in chunk])
 
 
 def insert_json_batch(chunk):
