@@ -27,7 +27,7 @@ def insert_json_batch(chunk):
 chunk_size = 10000
 chunk = []
 
-with open('pub.csv', 'r') as f:
+with open(f'{config["ZEFIX_DIR"]}/../pub.csv', 'r') as f:
     csv.field_size_limit(sys.maxsize)
     r = csv.reader(f, delimiter='\t')
     next(r)
@@ -40,7 +40,7 @@ with open('pub.csv', 'r') as f:
     insert_csv_batch(chunk)
 
 i = 0
-for (dirpath, dirnames, filenames) in walk('zefix'):
+for (dirpath, dirnames, filenames) in walk(config["ZEFIX_DIR"]):
     for filename in filenames:
         if filename.endswith('.ndjson'):
             with open(dirpath + '/' + filename, 'r') as f:
