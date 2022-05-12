@@ -81,7 +81,7 @@
             text = text.replace(/&gt;/g, ">")
             text = text.replace(/&apos;/g, "'")
             text = text.replace(/&quot;/g, "\"")
-            text = text.replace(/<[A-Z]>([^<]+)<E>/g, '$1')
+            text = text.replace(/<[A-Z5]>([^<]+)<E>/g, '$1')
             text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
             return text
         }
