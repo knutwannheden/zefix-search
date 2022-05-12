@@ -207,7 +207,7 @@
         width = 0;
         move();
 
-        for await (let line of makeTextFileLineIterator('search?q=' + query)) {
+        for await (let line of makeTextFileLineIterator('search2?q=' + query)) {
             try {
                 if (line === '...') {
                     progress.innerText = match_count + '+\u00A0matches';
@@ -222,20 +222,20 @@
                                 + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
                 tabCell = tr.insertCell(-1);
                 tabCell.textContent = myJson.sogcPublication.sogcDate;
-                tabCell = tr.insertCell(-1);
+                const companyCell = tr.insertCell(-1);
                 if (myJson.companyShort.name) {
-                    tabCell.innerHTML =
+                    companyCell.innerHTML =
                         `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
                                     + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a>`;
                 }
                 else if (chid_cache[myJson.companyShort.chid]) {
-                    tabCell.innerHTML =
+                    companyCell.innerHTML =
                         `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
                                     + chid_cache[myJson.companyShort.chid].ehraid}">${chid_cache[myJson.companyShort.chid].name}</a>`;
                 }
                 else {
-                    console.log('fetching chid ' + myJson.companyShort.chid)
-                    let resp = await fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
+                    companyCell.innerText = myJson.companyShort.chid;
+                    fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
                         mode: 'cors',
                         method: 'POST',
                         body: JSON.stringify({
@@ -250,12 +250,14 @@
                             'Accept-Encoding': 'gzip, deflate, br',
                             'Content-Type': 'application/json',
                         }
-                    });
-                    const zefix_search_res = await resp.json();
-                    chid_cache[myJson.companyShort.chid] = zefix_search_res.list[0];
-                    tabCell.innerHTML =
-                        `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                    + zefix_search_res.list[0].ehraid}">${zefix_search_res.list[0].name}</a>`;
+                    }).then(resp => {
+                        resp.json().then(json => {
+                            chid_cache[myJson.companyShort.chid] = json.list[0];
+                            companyCell.innerHTML =
+                                `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                            + json.list[0].ehraid}">${json.list[0].name}</a>`;
+                        })
+                    })
                 }
 
                 tabCell = tr.insertCell(-1);

@@ -1,4 +1,6 @@
+import json
 import os
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -7,6 +9,7 @@ from dotenv import dotenv_values
 from flask import Flask, render_template, request
 
 config = {**dotenv_values(".env"), **os.environ}
+conn = sqlite3.connect(config["DB_FILE"], check_same_thread=False)
 
 app = Flask(__name__)
 
@@ -35,8 +38,34 @@ def search():
                         yield '...\n'
                         return
         finally:
-            print('done')
             process.terminate()
+
+    return app.response_class(generate(), mimetype='plain/text')
+
+
+@app.route('/search2')
+def search2():
+    query = "NEAR(" + ' '.join([re.escape(s.strip('"'), literal_spaces=True) for s in re.findall('(".*?"|[^ ,.;]+)', request.args.get('q'))]) + ", 6)"
+    print(query)
+
+    def generate():
+        cur = conn.cursor()
+        try:
+            cur.execute('select company, publ_date, publ_id, publ_message from zefix where publ_message match ?', (query,))
+            count = 0
+            while True:
+                result = cur.fetchmany(100)
+                if not result:
+                    return
+                else:
+                    for row in result:
+                        yield f'{{"sogcPublication":{{"sogcId":{row[2]}, "sogcDate":"{row[1]}", "message":{json.dumps(row[3])}}}, "companyShort":{{"chid":{json.dumps(row[0])}}}}}\n'
+                        count += 1
+                        if count == 5000:
+                            yield '...\n'
+                            return
+        finally:
+            cur.close()
 
     return app.response_class(generate(), mimetype='plain/text')
 
