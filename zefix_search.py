@@ -45,8 +45,7 @@ def search():
 
 @app.route('/search2')
 def search2():
-    query = "NEAR(" + ' '.join([re.escape(s.strip('"'), literal_spaces=True) for s in re.findall('(".*?"|[^ ,.;]+)', request.args.get('q'))]) + ", 5)"
-    print(query)
+    query = "NEAR(" + ' '.join([s for s in re.findall('(".*?"|[^ ,.;]+)', request.args.get('q'))]) + ", 5)"
 
     def generate():
         cur = conn.cursor()
