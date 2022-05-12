@@ -81,8 +81,8 @@
             text = text.replace(/&gt;/g, ">")
             text = text.replace(/&apos;/g, "'")
             text = text.replace(/&quot;/g, "\"")
-            text = text.replace(/<[A-Z5]>([^<]+)<E>/g, '$1')
-            text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
+            text = text.replace(/<[A-Z5]>(.+)<E>/g, '$1')
+            text = text.replace(/<FT TYPE=".">(.+)<\/FT>/g, '$1')
             return text
         }
 
@@ -140,44 +140,6 @@
             if (startIndex < chunk.length) {
                 // last line didn't end in a newline char
                 yield chunk.substring(startIndex);
-            }
-        }
-
-        function highlightInternal(e, re) {
-            let match;
-            let localMatches = [];
-            while (match = re.exec(e.textContent)) {
-                localMatches.push(match);
-            }
-            for (var j = localMatches.length; j-- > 0;) {
-                match = localMatches[j];
-                if (e.nodeType === 3) {
-                    let span = document.createElement("span");
-                    span.classList.add('z-highlight');
-                    span.textContent = match[0];
-                    e.splitText(match.index);
-                    e.nextSibling.splitText(match[0].length);
-                    e.parentNode.replaceChild(span, e.nextSibling);
-                }
-                else {
-                    e.classList.add('z-highlight');
-                }
-            }
-        }
-
-        function highlight(element, re) {
-            let nodes = element.childNodes;
-            for (var i = nodes.length; i-- > 0;) {
-                const e = nodes[i];
-                if (e.nodeType === 3) {
-                    highlightInternal(e, re);
-                }
-                else if (e.nodeType === 1 && ['script', 'style'].includes(e.tagName.toLowerCase())) {
-                    // don't descend into JavaScript and CSS
-                }
-                else {
-                    highlight(e, re);  // Not a text node or leaf, so check it's children
-                }
             }
         }
 
@@ -261,8 +223,7 @@
                     }
 
                     tabCell = tr.insertCell(-1);
-                    tabCell.textContent = scrub_message(myJson.sogcPublication.message);
-                    highlight(tabCell, re);
+                    tabCell.innerHTML = scrub_message(myJson.sogcPublication.message);
                     match_count++;
                     progress.innerText = match_count + '\u00A0matches';
                 } catch (e) {

@@ -50,7 +50,7 @@ def search2():
     def generate():
         cur = conn.cursor()
         try:
-            cur.execute('select company_name, company_ehraid, company_chid, publ_date, publ_id, publ_message from zefix where publ_message match ? order by publ_date desc', (query,))
+            cur.execute('select company_name, company_ehraid, company_chid, publ_date, publ_id, highlight(zefix, 5, \'<span class="z-highlight">\', \'</span>\') from zefix where publ_message match ? order by publ_date desc', (query,))
             count = 0
             while True:
                 result = cur.fetchmany(100)
