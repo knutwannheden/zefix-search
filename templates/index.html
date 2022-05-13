@@ -41,6 +41,15 @@
             margin: 0 auto;
             text-align: center;
         }
+
+        span.z-section {
+            background: #e0e0ff;
+            {#text-decoration: underline blue;#}
+            {#text-decoration: overline blue;#}
+            {#border:2px dashed red;#}
+            {#border-radius: 2px;#}
+            {#padding:0.01em 0.01em;#}
+        }
     </style>
 
     <h1>{% block title %} Zefix Search {% endblock %}</h1>
@@ -83,6 +92,18 @@
             text = text.replace(/&quot;/g, "\"")
             text = text.replace(/<[A-Z5]>([^<]+)<E>/g, '$1')
             text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
+
+            let myRe = /\b[A-Z][A-Za-z ]+: /g;
+            let myArray;
+            let indexes = [];
+            while ((myArray = myRe.exec(text)) !== null) {
+                indexes.push(myRe.lastIndex - myArray[0].length);
+                indexes.push(myRe.lastIndex);
+            }
+            for (let i = indexes.length - 2; i >= 0; i -= 2) {
+                text = text.substring(0, indexes[i]) + '<span class="z-section">' + text.substring(indexes[i], indexes[i+1]-1) + '</span>' + text.substring(indexes[i+1]-1);
+            }
+
             text = text.replace(/~~s~~(.+?)~~e~~/g, '<span class="z-highlight">$1</span>')
             return text
         }
