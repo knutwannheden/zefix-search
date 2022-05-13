@@ -97,7 +97,7 @@
             text = text.replace(/<[A-Z5]>([^<]+)<E>/g, '$1')
             text = text.replace(/<FT TYPE=".">([^<]+)<\/FT>/g, '$1')
 
-            let myRe = /\b[A-Z][A-Za-zöüäéàè ]+: /g;
+            let myRe = /\b[A-Z][A-Za-zöüäéàè() ]+: /g;
             let myArray;
             let indexes = [];
             while ((myArray = myRe.exec(text)) !== null) {
