@@ -42,8 +42,14 @@
             text-align: center;
         }
 
-        span.z-section {
+        div.z-section {
             font-weight: bold;
+            margin-top: 4px;
+        }
+
+        div.z-detail {
+            font-size: 0.8em;
+            margin-top: 4px;
         }
 
         table#result > tbody > tr:nth-child(odd) {
@@ -109,18 +115,18 @@
                 indexes.push(myRe.lastIndex);
             }
             for (let i = indexes.length - 2; i >= 0; i -= 2) {
-                text = text.substring(0, indexes[i]) + '<br><span class="z-section">' + text.substring(indexes[i], indexes[i+1]-1) + '</span>' + text.substring(indexes[i+1]-1);
+                text = text.substring(0, indexes[i]) + '<div class="z-section">' + text.substring(indexes[i], indexes[i+1]-1) + '</div>' + text.substring(indexes[i+1]-1);
             }
 
             text = text.replace(/~~s~~(.+?)~~e~~/g, '<span class="z-highlight">$1</span>')
             return text
         }
 
-        var width = 0;
+        let width = 0;
 
         function move() {
-            var elem = document.getElementById("myBar");
-            var id = setInterval(frame, 50);
+            const elem = document.getElementById("myBar");
+            const id = setInterval(frame, 50);
             elem.style.backgroundColor = "#04AA6D";
 
             function frame() {
@@ -138,24 +144,24 @@
 
         async function* makeTextFileLineIterator(fileURL) {
             const utf8Decoder = new TextDecoder("utf-8");
-            let response = await fetch(fileURL);
-            let reader = response.body.getReader();
+            const response = await fetch(fileURL);
+            const reader = response.body.getReader();
             let {
                 value: chunk,
                 done: readerDone
             } = await reader.read();
             chunk = chunk ? utf8Decoder.decode(chunk, { stream: true }) : "";
 
-            let re = /\n+/gm;
+            const re = /\n+/gm;
             let startIndex = 0;
 
             for (; ;) {
-                let result = re.exec(chunk);
+                const result = re.exec(chunk);
                 if (!result) {
                     if (readerDone) {
                         break;
                     }
-                    let remainder = chunk.substring(startIndex);
+                    const remainder = chunk.substring(startIndex);
                     ({
                         value: chunk,
                         done: readerDone
@@ -173,17 +179,13 @@
             }
         }
 
-        var chid_cache = {}
+        const chid_cache = {};
 
         async function userAction() {
-            const re = RegExp('\\b' + Array.from(document.getElementById('search').value.matchAll('\".*?\"|[^ ,.;]+'))
-                .map(r => r[0].replaceAll('^\"|\"$', ""))
-                .join('\\b[^;]{0,30}\\b') + '\\b', 'gid');
-
             const query = encodeURIComponent(document.getElementById('search').value);
             if (history.pushState) {
-                let newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?q=' + query;
-                window.history.pushState({ path: newurl }, '', newurl);
+                let new_url = window.location.protocol + "//" + window.location.host + window.location.pathname + '?q=' + query;
+                window.history.pushState({ path: new_url }, '', new_url);
             }
 
             document.getElementById('instructions').style.display = 'none';
@@ -193,7 +195,7 @@
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
-            let progress = document.getElementById("myBar");
+            const progress = document.getElementById("myBar");
             let match_count = 0;
             progress.innerText = match_count + '\u00A0matches';
             width = 0;
@@ -208,25 +210,21 @@
                     let myJson = JSON.parse(line.charAt(0) === '{' ? line : line.substring(line.indexOf('{')));
 
                     let tr = body.insertRow(-1);
-                    let tabCell = tr.insertCell(-1);
-                    tabCell.innerHTML =
-                        `<a href="${'https://www.shab.ch/shabforms/servlet/Search?EID=7&DOCID='
-                                    + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a>`;
-                    tabCell = tr.insertCell(-1);
-                    tabCell.textContent = myJson.sogcPublication.sogcDate;
-                    const companyCell = tr.insertCell(-1);
+                    const tabCell = tr.insertCell(-1);
                     if (myJson.companyShort.name) {
-                        companyCell.innerHTML =
-                            `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                        + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a>`;
+                        tabCell.innerHTML +=
+                            `<div><a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                        + myJson.companyShort.ehraid}">${myJson.companyShort.name}</a></div>`;
                     }
                     else if (chid_cache[myJson.companyShort.chid]) {
-                        companyCell.innerHTML =
-                            `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                        + chid_cache[myJson.companyShort.chid].ehraid}">${chid_cache[myJson.companyShort.chid].name}</a>`;
+                        tabCell.innerHTML +=
+                            `<div><a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
+                                        + chid_cache[myJson.companyShort.chid].ehraid}">${chid_cache[myJson.companyShort.chid].name}</a></div>`;
                     }
                     else {
-                        companyCell.innerText = myJson.companyShort.chid;
+                        tabCell.innerHTML +=
+                            `<div>${myJson.companyShort.chid}</div>`;
+                        {#tabCell.innerText += myJson.companyShort.chid;#}
                         fetch('https://www.zefix.ch/ZefixREST/api/v1/firm/search.json', {
                             mode: 'cors',
                             method: 'POST',
@@ -245,15 +243,19 @@
                         }).then(resp => {
                             resp.json().then(json => {
                                 chid_cache[myJson.companyShort.chid] = json.list[0];
-                                companyCell.innerHTML =
+                                tabCell.innerHTML = tabCell.innerHTML.replace(myJson.companyShort.chid,
                                     `<a href="${'https://www.zefix.ch/en/search/entity/list/firm/'
-                                                + json.list[0].ehraid}">${json.list[0].name}</a>`;
+                                                + json.list[0].ehraid}">${json.list[0].name}</a>`);
                             })
                         })
                     }
+                    tabCell.innerHTML += `<div class="z-detail">${myJson.sogcPublication.sogcDate}</div>`;
+                    tabCell.innerHTML +=
+                        `<div class="z-detail"><a href="${'https://www.shab.ch/shabforms/servlet/Search?EID=7&DOCID='
+                                                          + myJson.sogcPublication.sogcId}">${myJson.sogcPublication.sogcId}</a></div>`;
 
-                    tabCell = tr.insertCell(-1);
-                    tabCell.innerHTML = scrub_message(myJson.sogcPublication.message);
+                    const tabCell2 = tr.insertCell(-1);
+                    tabCell2.innerHTML = scrub_message(myJson.sogcPublication.message);
                     match_count++;
                     progress.innerText = match_count + '\u00A0matches';
                 } catch (e) {
@@ -283,7 +285,6 @@
                 (where <i>house*</i> would
                 also match <i>houses</i>)
             </li>
-            </li>
             <li>In the case of multiple search terms (separated by space) the order is not relevant, but in the matched document
                 the terms must be a maximum of five words apart
             </li>
@@ -297,9 +298,7 @@
         <table id="result">
             <thead>
             <tr>
-                <th>ID</th>
-                <th>Date</th>
-                <th>Company</th>
+                <th>Details</th>
                 <th>Text</th>
             </tr>
             </thead>
