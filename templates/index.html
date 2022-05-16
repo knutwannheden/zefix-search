@@ -8,22 +8,24 @@
 
         span.z-highlight {
             background-color: #99c6f7;
-            color: black;
+            border-radius: 3px;
         }
 
-        #myProgress {
+        #search-progress {
             width: 50%;
             background-color: #ddd;
             text-align: left;
             text-indent: 10px;
             line-height: 20px;
             margin: 0 auto;
+            border-radius: 5px;
         }
 
-        #myBar {
+        #search-bar {
             width: 0%;
             height: 20px;
             background-color: #04AA6D;
+            border-radius: 5px;
         }
 
         #instructions {
@@ -129,7 +131,7 @@
         let width = 0;
 
         function move() {
-            const elem = document.getElementById("myBar");
+            const elem = document.getElementById("search-bar");
             const id = setInterval(frame, 50);
             elem.style.backgroundColor = "#04AA6D";
 
@@ -199,7 +201,7 @@
             const body = table.getElementsByTagName('tbody')[0]
             body.innerHTML = ''
 
-            const progress = document.getElementById("myBar");
+            const progress = document.getElementById("search-bar");
             let match_count = 0;
             progress.innerText = match_count + '\u00A0matches';
             width = 0;
@@ -275,8 +277,8 @@
             }
         });
     </script>
-    <div id="myProgress">
-        <div id="myBar"></div>
+    <div id="search-progress">
+        <div id="search-bar"></div>
     </div>
     <br>
     <div id="instructions" style="text-align: left">
