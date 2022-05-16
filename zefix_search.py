@@ -46,7 +46,12 @@ def search():
 @app.route('/search2')
 def search2():
     q = request.args.get('q')
-    query = q[4:] if q.startswith('sql:') else "NEAR(" + ' '.join([s for s in re.findall('(".*?"|[^ ,.;]+)', q)]) + ", 5)"
+    if q.startswith('sql:'):
+        query = q[4:]
+    else:
+        terms = [s.strip(',') for s in re.findall('(".*?"|[^ ]+)', q)]
+        terms = [f'"{t}"' if '-' in t else t for t in terms]
+        query = "NEAR(" + ' '.join(terms) + ", 5)"
 
     def generate():
         cur = conn.cursor()
