@@ -50,7 +50,7 @@ def search2():
         query = q[4:]
     else:
         terms = [s.strip(',').strip('"') for s in re.findall('(".*?"|[^ ]+)', q)]
-        terms = [f'"{t}"' for t in terms]
+        terms = [f'"{t}"' if t[-1] != '*' else t for t in terms]
         query = "NEAR(" + ' '.join(terms) + ", 5)"
 
     def generate():
