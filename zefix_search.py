@@ -55,6 +55,8 @@ def search2():
 
     if q.isnumeric():
         publ_id = int(q)
+    else:
+        publ_id = None
 
     def generate():
         cur = conn.cursor()
