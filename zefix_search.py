@@ -47,16 +47,22 @@ def search():
 def search2():
     q = request.args.get('q')
     if q.startswith('sql:'):
-        query = q[4:]
+        fts_expr = q[4:]
     else:
         terms = [s.strip(',').strip('"') for s in re.findall('(".*?"|[^ ]+)', q)]
         terms = [f'"{t}"' if t[-1] != '*' else t for t in terms]
-        query = "NEAR(" + ' '.join(terms) + ", 5)"
+        fts_expr = "NEAR(" + ' '.join(terms) + ", 5)"
+
+    if q.isnumeric():
+        publ_id = int(q)
 
     def generate():
         cur = conn.cursor()
         try:
-            cur.execute('select company_name, company_ehraid, company_chid, publ_date, publ_id, highlight(zefix, 5, \'~~s~~\', \'~~e~~\') from zefix where publ_message match ? order by publ_date desc', (query,))
+            if publ_id:
+                cur.execute('select company_name, company_ehraid, company_chid, publ_date, publ_id, highlight(zefix, 5, \'~~s~~\', \'~~e~~\') from zefix where publ_message match ? or publ_id match ? order by publ_date desc', (fts_expr, publ_id))
+            else:
+                cur.execute('select company_name, company_ehraid, company_chid, publ_date, publ_id, highlight(zefix, 5, \'~~s~~\', \'~~e~~\') from zefix where publ_message match ? order by publ_date desc', (fts_expr,))
             count = 0
             while True:
                 result = cur.fetchmany(100)
